@@ -23,6 +23,19 @@ import com.example.appcolegioclass.retrofit.entidades.Alumno
 import com.example.appcolegioclass.util.SnackbarManager
 import kotlinx.coroutines.launch
 
+/**
+ * Pantalla principal para la visualización y gestión de Alumnos.
+ * 
+ * Esta interfaz permite listar los estudiantes, realizar búsquedas en tiempo real,
+ * eliminar registros mediante gestos (swipe) y navegar hacia otras secciones del sistema.
+ * 
+ * @param addAlumno Callback para navegar al formulario de registro.
+ * @param datosAlumno Callback para ver detalles de un alumno (recibe el ID).
+ * @param verDocentes Callback de navegación a la sección de Docentes.
+ * @param verCursos Callback de navegación a la sección de Cursos.
+ * @param verAlumnos Callback para recargar la vista actual de Alumnos.
+ * @param verMenus Callback de navegación a la sección de Menús.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaAlumno(
@@ -33,6 +46,7 @@ fun ListaAlumno(
     verAlumnos: () -> Unit,
     verMenus: () -> Unit
 ) {
+    // --- ESTADOS Y LÓGICA DE NEGOCIO ---
     val scope = rememberCoroutineScope()
     var lista by remember { mutableStateOf<List<Alumno>>(listOf()) }
     var mostrarDialogo by remember { mutableStateOf(false) }
@@ -40,6 +54,9 @@ fun ListaAlumno(
     var alumnoActual by remember { mutableStateOf<Alumno?>(null) }
     var valorBuscado by remember { mutableStateOf("") }
 
+    /**
+     * Carga la lista de alumnos desde la API y aplica filtros locales.
+     */
     fun cargarAlumnos() {
         scope.launch {
             try {
@@ -54,11 +71,12 @@ fun ListaAlumno(
                     }
                 }
             } catch (e: Exception) {
-                SnackbarManager.showMessage("Error al cargar alumnos")
+                SnackbarManager.showMessage("Error al conectar con el servidor")
             }
         }
     }
 
+    // Recarga la lista automáticamente cuando el usuario escribe en el buscador
     LaunchedEffect(valorBuscado) {
         cargarAlumnos()
     }
@@ -66,7 +84,7 @@ fun ListaAlumno(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alumnos", fontWeight = FontWeight.Bold) },
+                title = { Text("Listado de Alumnos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Blue,
                     titleContentColor = Color.White
@@ -74,9 +92,11 @@ fun ListaAlumno(
             )
         },
         bottomBar = {
+            // --- BARRA DE NAVEGACIÓN INFERIOR PERSONALIZADA ---
+            // Se implementa con scroll horizontal para soportar múltiples opciones
             BottomAppBar(
-                containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF003366)
+                containerColor = Color(0xFFF5F5F5), // Gris corporativo claro
+                contentColor = Color(0xFF003366)    // Azul marino institucional
             ) {
                 Row(
                     modifier = Modifier
@@ -100,6 +120,7 @@ fun ListaAlumno(
                         ) {
                             Text(
                                 text = label,
+                                // Resalta visualmente la sección activa
                                 fontWeight = if (label == "Alumnos") FontWeight.Bold else FontWeight.Normal
                             )
                         }
@@ -109,7 +130,7 @@ fun ListaAlumno(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { addAlumno() }) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar Alumno")
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir nuevo alumno")
             }
         }
     ) { espacio ->
