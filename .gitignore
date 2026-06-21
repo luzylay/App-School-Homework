@@ -1,0 +1,17 @@
+local.properties
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Archivos de volcado de memoria (Memory Dumps)
+*.hprof
+
+# Archivos temporales de Android Studio
+.idea/caches
+.idea/libraries
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+*.iml
+.gradle
