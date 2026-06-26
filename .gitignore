@@ -15,3 +15,6 @@ local.properties
 .idea/assetWizardSettings.xml
 *.iml
 .gradle
+
+# Guía local de actualización
+GUIA_ACTUALIZACION.md

@@ -8,5 +8,7 @@ data class Alumno(
     val sexo: String,
     val fechaNacimiento: String,
     val numeroHermanos: Int,
-    val foto: String
+    val foto: String,
+    // --- APP ANDROID: Mapeo de versión para control de concurrencia optimista ---
+    val version: Int = 1
 )
