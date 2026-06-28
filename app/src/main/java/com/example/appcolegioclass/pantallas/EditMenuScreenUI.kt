@@ -229,47 +229,43 @@ fun EditarMenu(onBack: () -> Unit, codigo: Int) {
                 onClick = {
                     scope.launch {
                         try {
-                            if (nombre.isNotBlank() && nomCategoria.isNotBlank() && stock.isNotBlank() && precio.isNotBlank()) {
-                                var urlImagen = foto
+                            var urlImagen = foto
+                            
+                            if (imageCaptured && imageUri != null) {
+                                val filePart = uriToMultipart(context, imageUri!!)
+                                val params = mutableMapOf<String, RequestBody>()
+                                params["upload_preset"] = "menu_preset".toRequestBody("text/plain".toMediaType())
+                                params["folder"] = "menus".toRequestBody("text/plain".toMediaType())
                                 
-                                if (imageCaptured && imageUri != null) {
-                                    val filePart = uriToMultipart(context, imageUri!!)
-                                    val params = mutableMapOf<String, RequestBody>()
-                                    params["upload_preset"] = "menu_preset".toRequestBody("text/plain".toMediaType())
-                                    params["folder"] = "menus".toRequestBody("text/plain".toMediaType())
-                                    
-                                    val response = CloudinaryClient.api.uploadImage(filePart, params)
-                                    urlImagen = response.secure_url
-                                }
-
-                                RetrofitClient.menuApi.actualizarMenu(
-                                    Menu(
-                                        codigo,
-                                        nombre,
-                                        nomCategoria,
-                                        stock.toIntOrNull() ?: 0,
-                                        precio.toDoubleOrNull() ?: 0.0,
-                                        urlImagen,
-                                        version
-                                    )
-                                )
-                                SnackbarManager.showMessage("Menú actualizado")
-                                onBack()
-                            } else {
-                                SnackbarManager.showMessage("Por favor complete todos los campos")
+                                val response = CloudinaryClient.api.uploadImage(filePart, params)
+                                urlImagen = response.secure_url
                             }
+
+                            RetrofitClient.menuApi.actualizarMenu(
+                                Menu(
+                                    codigo,
+                                    nombre,
+                                    nomCategoria,
+                                    stock.toIntOrNull() ?: 0,
+                                    precio.toDoubleOrNull() ?: 0.0,
+                                    urlImagen,
+                                    version
+                                )
+                            )
+                            SnackbarManager.showMessage("Menú actualizado")
+                            onBack()
                         } catch (e: HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
                             var mensaje = ""
                             try {
                                 val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
                                 // Caso 1: validaciones (data != null)
-                                if (errorResponse.data != null && errorResponse.data.isNotEmpty()) {
+                                if (!errorResponse.data.isNullOrEmpty()) {
                                     val validaciones = buildString {
                                         append(errorResponse.mensaje)
                                         append("\n\n")
-                                        errorResponse.data.forEach { (clave, valor) ->
-                                            append("• $clave : $valor\n")
+                                        errorResponse.data.forEach { (clave, mensaje) ->
+                                            append("• $clave : $mensaje\n")
                                         }
                                     }
                                     mensaje = validaciones

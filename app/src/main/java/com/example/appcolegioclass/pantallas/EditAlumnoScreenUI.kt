@@ -234,48 +234,44 @@ fun EditarAlumno(onBack: () -> Unit, codigo: Int) {
                 onClick = {
                     scope.launch {
                         try {
-                            if (nombre.isNotBlank() && paterno.isNotBlank() && materno.isNotBlank() && fechaNacimiento.isNotBlank()) {
-                                var urlImagen = foto
+                            var urlImagen = foto
+                            
+                            if (imageCaptured && imageUri != null) {
+                                val filePart = uriToMultipart(context, imageUri!!)
+                                val params = mutableMapOf<String, RequestBody>()
+                                params["upload_preset"] = "alumno_preset".toRequestBody("text/plain".toMediaType())
+                                params["folder"] = "alumnos".toRequestBody("text/plain".toMediaType())
                                 
-                                if (imageCaptured && imageUri != null) {
-                                    val filePart = uriToMultipart(context, imageUri!!)
-                                    val params = mutableMapOf<String, RequestBody>()
-                                    params["upload_preset"] = "alumno_preset".toRequestBody("text/plain".toMediaType())
-                                    params["folder"] = "alumnos".toRequestBody("text/plain".toMediaType())
-                                    
-                                    val response = CloudinaryClient.api.uploadImage(filePart, params)
-                                    urlImagen = response.secure_url
-                                }
-
-                                val alumnoActualizado = Alumno(
-                                    codigo = codigo,
-                                    nombre = nombre,
-                                    paterno = paterno,
-                                    materno = materno,
-                                    sexo = sexo,
-                                    fechaNacimiento = fechaNacimiento,
-                                    numeroHermanos = numeroHermanos.toIntOrNull() ?: 0,
-                                    foto = urlImagen,
-                                    version = version
-                                )
-                                RetrofitClient.alumnoApi.actualizarAlumno(alumnoActualizado)
-                                SnackbarManager.showMessage("Alumno actualizado correctamente")
-                                onBack()
-                            } else {
-                                SnackbarManager.showMessage("Complete los campos obligatorios")
+                                val response = CloudinaryClient.api.uploadImage(filePart, params)
+                                urlImagen = response.secure_url
                             }
+
+                            val alumnoActualizado = Alumno(
+                                codigo = codigo,
+                                nombre = nombre,
+                                paterno = paterno,
+                                materno = materno,
+                                sexo = sexo,
+                                fechaNacimiento = fechaNacimiento,
+                                numeroHermanos = numeroHermanos.toIntOrNull() ?: 0,
+                                foto = urlImagen,
+                                version = version
+                            )
+                            RetrofitClient.alumnoApi.actualizarAlumno(alumnoActualizado)
+                            SnackbarManager.showMessage("Alumno actualizado correctamente")
+                            onBack()
                         } catch (e: HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
                             var mensaje = ""
                             try {
                                 val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
                                 // Caso 1: validaciones (data != null)
-                                if (errorResponse.data != null && errorResponse.data.isNotEmpty()) {
+                                if (!errorResponse.data.isNullOrEmpty()) {
                                     val validaciones = buildString {
                                         append(errorResponse.mensaje)
                                         append("\n\n")
-                                        errorResponse.data.forEach { (clave, valor) ->
-                                            append("• $clave : $valor\n")
+                                        errorResponse.data.forEach { (clave, mensaje) ->
+                                            append("• $clave : $mensaje\n")
                                         }
                                     }
                                     mensaje = validaciones
