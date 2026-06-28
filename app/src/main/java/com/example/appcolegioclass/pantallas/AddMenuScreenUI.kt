@@ -33,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,13 +43,16 @@ import coil.compose.AsyncImage
 import com.example.appcolegioclass.retrofit.CloudinaryClient
 import com.example.appcolegioclass.util.SnackbarManager
 import com.example.appcolegioclass.retrofit.RetrofitClient
+import com.example.appcolegioclass.retrofit.entidades.ErrorResponse
 import com.example.appcolegioclass.retrofit.entidades.Menu
 import com.example.appcolegioclass.utils.createImageUri
 import com.example.appcolegioclass.utils.uriToMultipart
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.HttpException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +65,8 @@ fun AdicionarMenu(
 
     // --- FLUJO DE ESTADO: Variables reactivas para capturar la entrada del usuario ---
     var nombre by remember { mutableStateOf("") }
-    var stock by remember { mutableStateOf("") }
-    var precio by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("0") }
+    var precio by remember { mutableStateOf("0.0") }
     val categorias = listOf("Entradas", "Platos de Fondo", "Comida Criolla","Menú Ejecutivo","Comida Vegetariana")
     var expanded by remember { mutableStateOf(false) }
     var nomCategoria by remember { mutableStateOf("") }
@@ -222,6 +226,27 @@ fun AdicionarMenu(
                             } else {
                                 SnackbarManager.showMessage("Por favor complete todos los campos")
                             }
+                        } catch (e: HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            var mensajeFinal = "Error de validación"
+                            try {
+                                val errorType = object : com.google.gson.reflect.TypeToken<com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement>>() {}.type
+                                val errorResponse: com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement> = Gson().fromJson(errorBody, errorType)
+                                if (errorResponse != null && errorResponse.data.isJsonObject) {
+                                    val errors = errorResponse.data.asJsonObject
+                                    mensajeFinal = buildString {
+                                        append(errorResponse.mensaje).append("\n")
+                                        errors.entrySet().forEach { entry ->
+                                            append("• ${entry.key}: ${entry.value.asString}\n")
+                                        }
+                                    }
+                                } else if (errorResponse != null) {
+                                    mensajeFinal = errorResponse.mensaje
+                                }
+                            } catch (ex: Exception) {
+                                mensajeFinal = "Error inesperado del servidor"
+                            }
+                            SnackbarManager.showMessage(mensajeFinal)
                         } catch (e: Exception) {
                             SnackbarManager.showMessage("Error: ${e.message}")
                         }

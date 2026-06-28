@@ -23,13 +23,16 @@ import coil.compose.AsyncImage
 import com.example.appcolegioclass.retrofit.CloudinaryClient
 import com.example.appcolegioclass.retrofit.RetrofitClient
 import com.example.appcolegioclass.retrofit.entidades.Alumno
+import com.example.appcolegioclass.retrofit.entidades.ErrorResponse
 import com.example.appcolegioclass.util.SnackbarManager
 import com.example.appcolegioclass.utils.createImageUri
 import com.example.appcolegioclass.utils.uriToMultipart
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.HttpException
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,6 +213,27 @@ fun AdicionarAlumno(onBack: () -> Unit) {
                             } else {
                                 SnackbarManager.showMessage("Complete los campos obligatorios")
                             }
+                        } catch (e: HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            var mensajeFinal = "Error de validación"
+                            try {
+                                val errorType = object : com.google.gson.reflect.TypeToken<com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement>>() {}.type
+                                val errorResponse: com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement> = Gson().fromJson(errorBody, errorType)
+                                if (errorResponse != null && errorResponse.data.isJsonObject) {
+                                    val errors = errorResponse.data.asJsonObject
+                                    mensajeFinal = buildString {
+                                        append(errorResponse.mensaje).append("\n")
+                                        errors.entrySet().forEach { entry ->
+                                            append("• ${entry.key}: ${entry.value.asString}\n")
+                                        }
+                                    }
+                                } else if (errorResponse != null) {
+                                    mensajeFinal = errorResponse.mensaje
+                                }
+                            } catch (ex: Exception) {
+                                mensajeFinal = "Error inesperado del servidor"
+                            }
+                            SnackbarManager.showMessage(mensajeFinal)
                         } catch (e: Exception) {
                             SnackbarManager.showMessage("Error: ${e.message}")
                         }

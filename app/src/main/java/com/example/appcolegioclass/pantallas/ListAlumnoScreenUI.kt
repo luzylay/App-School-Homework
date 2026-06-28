@@ -61,14 +61,18 @@ fun ListaAlumno(
     fun cargarAlumnos() {
         scope.launch {
             try {
-                val data = RetrofitClient.alumnoApi.listarAlumnos()
-                lista = if (valorBuscado.isEmpty()) {
-                    data
-                } else {
-                    data.filter {
-                        it.nombre.contains(valorBuscado, ignoreCase = true) ||
-                        it.paterno.contains(valorBuscado, ignoreCase = true) ||
-                        it.materno.contains(valorBuscado, ignoreCase = true)
+                val response = RetrofitClient.alumnoApi.listarAlumnos()
+                if (response.success && response.data.isJsonArray) {
+                    val listType = object : com.google.gson.reflect.TypeToken<List<Alumno>>() {}.type
+                    val data: List<Alumno> = com.google.gson.Gson().fromJson(response.data, listType)
+                    lista = if (valorBuscado.isEmpty()) {
+                        data
+                    } else {
+                        data.filter {
+                            it.nombre.contains(valorBuscado, ignoreCase = true) ||
+                                    it.paterno.contains(valorBuscado, ignoreCase = true) ||
+                                    it.materno.contains(valorBuscado, ignoreCase = true)
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -94,7 +98,7 @@ fun ListaAlumno(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Listado de Alumnos", fontWeight = FontWeight.Bold) },
+                title = { Text("Alumnos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Blue,
                     titleContentColor = Color.White
@@ -264,8 +268,8 @@ fun ListaAlumno(
                                     lista = lista.filter { it.codigo != seleccionado.codigo }
                                     SnackbarManager.showMessage("Borrando...") 
                                     
-                                    // Simulación de envío de versión para Concurrencia Optimista
-                                    RetrofitClient.alumnoApi.eliminarAlumno(seleccionado.codigo)
+                                    // --- APP ANDROID: Envío de versión en el cuerpo (Concurrencia Optimista) ---
+                                    RetrofitClient.alumnoApi.eliminarAlumno(seleccionado.codigo, seleccionado.version)
                                     
                                     SnackbarManager.showMessage("Alumno eliminado con éxito")
                                     mostrarDialogo = false

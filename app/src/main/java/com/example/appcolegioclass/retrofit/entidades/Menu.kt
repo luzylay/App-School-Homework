@@ -6,7 +6,7 @@ data class Menu (
     val categoria: String,
     val stock: Int,
     val precio: Double,
-    val foto: String
-){
-
-}
+    val foto: String,
+    // --- APP ANDROID: Mapeo de versión para control de concurrencia optimista ---
+    val version: Int = 1
+)

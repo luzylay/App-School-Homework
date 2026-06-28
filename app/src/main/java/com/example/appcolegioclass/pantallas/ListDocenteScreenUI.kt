@@ -35,15 +35,8 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,49 +46,57 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.appcolegioclass.local.AppDatabase
 import com.example.appcolegioclass.local.entidades.Docente
+import com.example.appcolegioclass.util.SnackbarManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaDocente(
-    // --- FLUJO DE NAVEGACIÓN: Callbacks para cambiar entre pantallas ---
     addDocente: () -> Unit,
     verDocentes: () -> Unit,
     verCursos: () -> Unit,
     verAlumnos: () -> Unit,
     verMenus: () -> Unit,
-    // --- FLUJO DE DATOS: Inyección de la base de datos de docentes ---
     db: AppDatabase,
-    // --- FLUJO DE NAVEGACIÓN: Callback para navegar a la pantalla de detalles de docente ---
     datosDocente: (Int) -> Unit,
 ) {
-    // --- FLUJO DE DATOS: Acceso al DAO para interactuar con la tabla de docentes ---
     val dao = db.docenteDao()
     val scope = rememberCoroutineScope()
 
-    // --- FLUJO DE ESTADO: Estado que mantiene la lista de docentes para la UI ---
-    var lista by remember {
-        mutableStateOf<List<Docente>>(listOf())
-    }
-
+    var lista by remember { mutableStateOf<List<Docente>>(listOf()) }
     var mostrarDialogo by remember { mutableStateOf(false) }
-
     var dismissActual by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
-
     var docenteActual by remember { mutableStateOf<Docente?>(null) }
-
     var valorBuscado by remember { mutableStateOf("") }
+    
+    // UX: Estado para deshabilitar botones durante operaciones
+    var estaOperando by remember { mutableStateOf(false) }
 
-    // --- FLUJO DE DATOS: Efecto de carga inicial para obtener los datos de la DB ---
-    LaunchedEffect(valorBuscado) {
-        lista = if (valorBuscado.isEmpty()) {
-            dao.listar()
-        } else {
-            dao.listar().filter {
-                it.nombres.contains(valorBuscado, ignoreCase = true) ||
-                it.apellidos.contains(valorBuscado, ignoreCase = true)
+    fun cargarDocentes() {
+        scope.launch {
+            val data = dao.listar()
+            lista = if (valorBuscado.isEmpty()) {
+                data
+            } else {
+                data.filter {
+                    it.nombres.contains(valorBuscado, ignoreCase = true) ||
+                    it.apellidos.contains(valorBuscado, ignoreCase = true)
+                }
             }
         }
+    }
+
+    // SINCRONIZACIÓN: Polling periódico (cada 60s) para asegurar consistencia
+    LaunchedEffect(Unit) {
+        while(true) {
+            cargarDocentes()
+            delay(60000)
+        }
+    }
+
+    LaunchedEffect(valorBuscado) {
+        cargarDocentes()
     }
 
     // --- ESTILO Y ESTRUCTURA: Contenedor principal Scaffold ---
@@ -286,30 +287,45 @@ fun ListaDocente(
             },
             confirmButton = {
                 Button(
+                    enabled = !estaOperando, // UX: Evita doble clic
                     onClick = {
                         scope.launch {
-                            docenteActual?.let {
-                                dao.eliminar(it)
-                                val data = dao.listar()
-                                lista = if (valorBuscado.isEmpty()) {
-                                    data
-                                } else {
-                                    data.filter { d ->
-                                        d.nombres.contains(valorBuscado, ignoreCase = true) ||
-                                        d.apellidos.contains(valorBuscado, ignoreCase = true)
-                                    }
+                            docenteActual?.let { seleccionado ->
+                                estaOperando = true
+                                val listaOriginal = lista // Respaldo para Rollback
+                                
+                                try {
+                                    // Optimistic UI: Borrado visual inmediato
+                                    lista = lista.filter { it.codigo != seleccionado.codigo }
+                                    SnackbarManager.showMessage("Borrando docente...")
+                                    
+                                    dao.eliminar(seleccionado)
+                                    
+                                    SnackbarManager.showMessage("Docente eliminado")
+                                    mostrarDialogo = false
+                                } catch (e: Exception) {
+                                    // Rollback en caso de error local
+                                    lista = listaOriginal
+                                    SnackbarManager.showMessage("Error al eliminar docente")
+                                } finally {
+                                    estaOperando = false
+                                    docenteActual = null
+                                    cargarDocentes() // Sincronización final
                                 }
-                                mostrarDialogo = false
-                                docenteActual = null
                             }
                         }
                     }
                 ) {
-                    Text("Sí")
+                    if (estaOperando) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Sí")
+                    }
                 }
             },
             dismissButton = {
                 OutlinedButton(
+                    enabled = !estaOperando,
                     onClick = {
                         mostrarDialogo = false
                         scope.launch {

@@ -1,26 +1,23 @@
 package com.example.appcolegioclass.retrofit.dao
 
 import com.example.appcolegioclass.retrofit.entidades.Menu
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import com.example.appcolegioclass.retrofit.entidades.ApiResponse
+import com.google.gson.JsonElement
+import retrofit2.http.*
 
 interface ApiServiceMenu {
-    @GET("/menu/lista")
-    suspend fun listarMenus(): List<Menu>
+    @GET("/men/lista")
+    suspend fun listarMenus(): ApiResponse<JsonElement>
 
-    @GET("/menu/buscar/{cod}")
-    suspend fun buscarPorCodigo(@Path("cod") codigo: Int): Menu
+    @GET("/men/buscar/{cod}")
+    suspend fun buscarPorCodigo(@Path("cod") codigo: Int): ApiResponse<JsonElement>
 
-    @POST("/menu/registrar")
-    suspend fun registrarMenu(@Body bean: Menu)
+    @POST("/men/registrar")
+    suspend fun registrarMenu(@Body bean: Menu): ApiResponse<JsonElement>
 
-    @DELETE("/menu/eliminar/{id}")
-    suspend fun eliminarMenu(@Path("id") id: Int)
+    @HTTP(method = "DELETE", path = "/men/eliminar/{id}", hasBody = true)
+    suspend fun eliminarMenu(@Path("id") id: Int, @Body version: Int)
 
-    @PUT("/menu/actualizar")
-    suspend fun actualizarMenu(@Body bean: Menu)
+    @PUT("/men/actualizar")
+    suspend fun actualizarMenu(@Body bean: Menu): ApiResponse<JsonElement>
 }

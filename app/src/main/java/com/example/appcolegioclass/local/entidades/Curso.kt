@@ -10,5 +10,7 @@ data class Curso(
     val nombre: String,
     val ciclo: String,
     val creditos: Double,
-    val carrera: String
+    val carrera: String,
+    // --- APP ANDROID: Versionado para control de concurrencia en base de datos local ---
+    val version: Int = 0
 )

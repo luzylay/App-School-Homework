@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -34,15 +35,8 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,44 +44,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.appcolegioclass.local.AppDatabase
 import com.example.appcolegioclass.local.entidades.Curso
+import com.example.appcolegioclass.util.SnackbarManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListaCurso(
-    // --- FLUJO DE NAVEGACIÓN: Funciones de callback para cambiar entre pantallas ---
     addCurso: () -> Unit,
     verDocentes: () -> Unit,
     verCursos: () -> Unit,
     verAlumnos: () -> Unit,
     verMenus: () -> Unit,
-    // --- FLUJO DE DATOS: Inyección de la base de datos de cursos ---
     db: AppDatabase,
-    // --- FLUJO DE NAVEGACIÓN: Callback para navegar a la pantalla de detalles de curso ---
     datosCurso: (Int) -> Unit
 ) {
-    // --- FLUJO DE DATOS: Acceso al DAO para interactuar con la base de datos Room ---
     val dao = db.cursoDao()
     val scope = rememberCoroutineScope()
     
-    // --- FLUJO DE ESTADO: Variable reactiva que almacena la lista de cursos cargados ---
     var lista by remember { mutableStateOf(listOf<Curso>()) }
-
     var mostrarDialogo by remember { mutableStateOf(false) }
     var dismissActual by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     var cursoActual by remember { mutableStateOf<Curso?>(null) }
-
     var valorBuscado by remember { mutableStateOf("") }
 
-    // --- FLUJO DE DATOS: Bloque que carga los datos de la base de datos al iniciar la pantalla ---
-    LaunchedEffect(valorBuscado) {
-        lista = if (valorBuscado.isEmpty()) {
-            dao.listar()
-        } else {
-            dao.listar().filter {
-                it.nombre.contains(valorBuscado, ignoreCase = true)
+    // UX: Estado para deshabilitar botones durante operaciones
+    var estaOperando by remember { mutableStateOf(false) }
+
+    fun cargarCursos() {
+        scope.launch {
+            val data = dao.listar()
+            lista = if (valorBuscado.isEmpty()) {
+                data
+            } else {
+                data.filter {
+                    it.nombre.contains(valorBuscado, ignoreCase = true)
+                }
             }
         }
+    }
+
+    // SINCRONIZACIÓN: Polling periódico (cada 60s)
+    LaunchedEffect(Unit) {
+        while(true) {
+            cargarCursos()
+            delay(60000)
+        }
+    }
+
+    LaunchedEffect(valorBuscado) {
+        cargarCursos()
     }
 
     // --- ESTILO Y ESTRUCTURA: Contenedor principal Scaffold para organizar la pantalla ---
@@ -258,32 +264,43 @@ fun ListaCurso(
             },
             confirmButton = {
                 Button(
+                    enabled = !estaOperando,
                     onClick = {
                         scope.launch {
-                            cursoActual?.let {
-                                // 1. Eliminar de la BD
-                                dao.eliminar(it)
-                                // 2. Obtener lista actualizada y reaplicar filtro
-                                val data = dao.listar()
-                                lista = if (valorBuscado.isEmpty()) {
-                                    data
-                                } else {
-                                    data.filter { c ->
-                                        c.nombre.contains(valorBuscado, ignoreCase = true)
-                                    }
+                            cursoActual?.let { seleccionado ->
+                                estaOperando = true
+                                val listaOriginal = lista
+                                try {
+                                    // Optimistic UI
+                                    lista = lista.filter { it.codigo != seleccionado.codigo }
+                                    SnackbarManager.showMessage("Eliminando curso...")
+                                    
+                                    dao.eliminar(seleccionado)
+                                    
+                                    SnackbarManager.showMessage("Curso eliminado")
+                                    mostrarDialogo = false
+                                } catch (e: Exception) {
+                                    lista = listaOriginal
+                                    SnackbarManager.showMessage("Error al eliminar curso")
+                                } finally {
+                                    estaOperando = false
+                                    cursoActual = null
+                                    cargarCursos()
                                 }
-                                // 3. Cerrar diálogo y limpiar referencia
-                                mostrarDialogo = false
-                                cursoActual = null
                             }
                         }
                     }
                 ) {
-                    Text("Sí")
+                    if (estaOperando) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Sí")
+                    }
                 }
             },
             dismissButton = {
                 OutlinedButton(
+                    enabled = !estaOperando,
                     onClick = {
                         mostrarDialogo = false
                         scope.launch {

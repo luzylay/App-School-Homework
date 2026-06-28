@@ -7,7 +7,7 @@ import com.example.appcolegioclass.local.dao.DocenteDao
 import com.example.appcolegioclass.local.entidades.Curso
 import com.example.appcolegioclass.local.entidades.Docente
 
-@Database(entities = [Docente::class, Curso::class], version = 4, exportSchema = false)
+@Database(entities = [Docente::class, Curso::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun docenteDao(): DocenteDao
     abstract fun cursoDao(): CursoDao

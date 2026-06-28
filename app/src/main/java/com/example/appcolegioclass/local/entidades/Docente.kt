@@ -12,5 +12,7 @@ data class Docente(
     val sexo: String,
     val sueldo: Double,
     val hijos: Int,
-    val foto: String = ""
+    val foto: String = "",
+    // --- APP ANDROID: Versionado para control de concurrencia en base de datos local ---
+    val version: Int = 0
 )

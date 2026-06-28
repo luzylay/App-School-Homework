@@ -1,15 +1,12 @@
 package com.example.appcolegioclass.pantallas
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,10 +52,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.appcolegioclass.local.entidades.Docente
 import com.example.appcolegioclass.retrofit.RetrofitClient
 import com.example.appcolegioclass.retrofit.entidades.Menu
 import com.example.appcolegioclass.util.SnackbarManager
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,16 +83,37 @@ fun ListaMenu(
     var dismissActual by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     var menuActual by remember { mutableStateOf<Menu?>(null) }
     var valorBuscado by remember { mutableStateOf("") }
+    var isDeleting by remember { mutableStateOf(false) }
+
+    // --- FLUJO DE DATOS: Polling para sincronización automática (60s) ---
+    LaunchedEffect(Unit) {
+        while (true) {
+            try {
+                val response = RetrofitClient.menuApi.listarMenus()
+                if (valorBuscado.isEmpty() && response.success && response.data.isJsonArray) {
+                    val listType = object : TypeToken<List<Menu>>() {}.type
+                    lista = Gson().fromJson(response.data, listType)
+                }
+            } catch (e: Exception) {
+                // Silently fail polling
+            }
+            delay(60000)
+        }
+    }
 
     // --- FLUJO DE DATOS: Efecto de carga inicial y filtrado ---
     LaunchedEffect(valorBuscado) {
         scope.launch {
             try {
-                val data = RetrofitClient.menuApi.listarMenus()
-                lista = if (valorBuscado.isEmpty()) {
-                    data
-                } else {
-                    data.filter { it.nombre.contains(valorBuscado, ignoreCase = true) }
+                val response = RetrofitClient.menuApi.listarMenus()
+                if (response.success && response.data.isJsonArray) {
+                    val listType = object : TypeToken<List<Menu>>() {}.type
+                    val data: List<Menu> = Gson().fromJson(response.data, listType)
+                    lista = if (valorBuscado.isEmpty()) {
+                        data
+                    } else {
+                        data.filter { it.nombre.contains(valorBuscado, ignoreCase = true) }
+                    }
                 }
             } catch (e: Exception) {
                 SnackbarManager.showMessage("Error al conectar con el servidor")
@@ -192,7 +213,7 @@ fun ListaMenu(
                 items(lista, key = { it.codigo }) { bean ->
                     val dismissState = rememberSwipeToDismissBoxState(
                         confirmValueChange = { value ->
-                            if (value != SwipeToDismissBoxValue.Settled) {
+                            if (value != SwipeToDismissBoxValue.Settled && !isDeleting) {
                                 menuActual = bean
                                 mostrarDialogo = true
                                 true
@@ -239,7 +260,7 @@ fun ListaMenu(
                         Card(
                             // --- TAMAÑO: La tarjeta de datos ocupa todo el ancho ---
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = { editMenu(bean.codigo)}
+                            onClick = { if (!isDeleting) editMenu(bean.codigo) }
                         ) {
                             Row(
                                 modifier = Modifier
@@ -258,14 +279,22 @@ fun ListaMenu(
                                     Text("Nombres : ${bean.nombre}")
                                     Text("Precio : ${bean.precio}")
                                 }
-                                AsyncImage(
-                                    model = bean.foto.ifEmpty { "https://res.cloudinary.com/dfntftd2h/image/upload/v1731639352/notfound_x7zr8p.png" },
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .padding(start = 10.dp),
-                                    contentScale = ContentScale.Crop
-                                )
+                                if (isDeleting && menuActual?.codigo == bean.codigo) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = bean.foto.ifEmpty { "https://res.cloudinary.com/dfntftd2h/image/upload/v1731639352/notfound_x7zr8p.png" },
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(100.dp)
+                                            .padding(start = 10.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             }
                         }
                     }
@@ -291,15 +320,31 @@ fun ListaMenu(
             confirmButton = {
                 Button(
                     onClick = {
+                        val originalList = lista
+                        val targetMenu = menuActual
+                        mostrarDialogo = false
+                        isDeleting = true
+
+                        // --- UX: Optimistic UI - Eliminar visualmente antes de la respuesta ---
+                        lista = lista.filter { it.codigo != targetMenu?.codigo }
+
                         scope.launch {
                             try {
-                                menuActual?.let {
-                                    RetrofitClient.menuApi.eliminarMenu(it.codigo)
-                                    lista = RetrofitClient.menuApi.listarMenus()
-                                    mostrarDialogo = false
+                                targetMenu?.let {
+                                    RetrofitClient.menuApi.eliminarMenu(it.codigo, it.version)
+                                    SnackbarManager.showMessage("Menú eliminado correctamente")
                                 }
                             } catch (e: Exception) {
-                                // Manejar error
+                                // --- UX: Rollback en caso de error o conflicto (409) ---
+                                lista = originalList
+                                val errorMsg = if (e.message?.contains("409") == true)
+                                    "Error: El menú ha sido modificado por otro usuario"
+                                else "Error al eliminar el menú"
+                                SnackbarManager.showMessage(errorMsg)
+                                dismissActual?.snapTo(SwipeToDismissBoxValue.Settled)
+                            } finally {
+                                isDeleting = false
+                                menuActual = null
                             }
                         }
                     }

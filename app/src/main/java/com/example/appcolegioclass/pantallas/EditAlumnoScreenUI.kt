@@ -23,13 +23,16 @@ import coil.compose.AsyncImage
 import com.example.appcolegioclass.retrofit.CloudinaryClient
 import com.example.appcolegioclass.retrofit.RetrofitClient
 import com.example.appcolegioclass.retrofit.entidades.Alumno
+import com.example.appcolegioclass.retrofit.entidades.ErrorResponse
 import com.example.appcolegioclass.util.SnackbarManager
 import com.example.appcolegioclass.utils.createImageUri
 import com.example.appcolegioclass.utils.uriToMultipart
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.HttpException
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,11 +51,12 @@ fun EditarAlumno(onBack: () -> Unit, codigo: Int) {
     var fechaNacimiento by remember { mutableStateOf("") }
     var numeroHermanos by remember { mutableStateOf("") }
     var foto by remember { mutableStateOf("") }
+    var version by remember { mutableIntStateOf(1) }
 
     var imageUri by remember {
         mutableStateOf<Uri?>(null)
     }
-
+    // ... rest of state variables ...
     var imageCaptured by remember {
         mutableStateOf(false)
     }
@@ -82,14 +86,32 @@ fun EditarAlumno(onBack: () -> Unit, codigo: Int) {
 
     LaunchedEffect(codigo) {
         try {
-            val a = RetrofitClient.alumnoApi.buscarAlumno(codigo)
-            nombre = a.nombre
-            paterno = a.paterno
-            materno = a.materno
-            sexo = a.sexo
-            fechaNacimiento = a.fechaNacimiento
-            numeroHermanos = a.numeroHermanos.toString()
-            foto = a.foto
+            val response = RetrofitClient.alumnoApi.buscarAlumno(codigo)
+            if (response.success) {
+                val gson = com.google.gson.Gson()
+                val a: Alumno? = when {
+                    response.data.isJsonArray -> {
+                        val listType = object : com.google.gson.reflect.TypeToken<List<Alumno>>() {}.type
+                        val alumnos: List<Alumno> = gson.fromJson(response.data, listType)
+                        alumnos.firstOrNull()
+                    }
+                    response.data.isJsonObject -> {
+                        gson.fromJson(response.data, Alumno::class.java)
+                    }
+                    else -> null
+                }
+
+                a?.let {
+                    nombre = it.nombre
+                    paterno = it.paterno
+                    materno = it.materno
+                    sexo = it.sexo
+                    fechaNacimiento = it.fechaNacimiento
+                    numeroHermanos = it.numeroHermanos.toString()
+                    foto = it.foto
+                    version = it.version
+                }
+            }
         } catch (e: Exception) {
             SnackbarManager.showMessage("Error al cargar datos del alumno")
         }
@@ -233,7 +255,8 @@ fun EditarAlumno(onBack: () -> Unit, codigo: Int) {
                                     sexo = sexo,
                                     fechaNacimiento = fechaNacimiento,
                                     numeroHermanos = numeroHermanos.toIntOrNull() ?: 0,
-                                    foto = urlImagen
+                                    foto = urlImagen,
+                                    version = version
                                 )
                                 RetrofitClient.alumnoApi.actualizarAlumno(alumnoActualizado)
                                 SnackbarManager.showMessage("Alumno actualizado correctamente")
@@ -241,6 +264,27 @@ fun EditarAlumno(onBack: () -> Unit, codigo: Int) {
                             } else {
                                 SnackbarManager.showMessage("Complete los campos obligatorios")
                             }
+                        } catch (e: HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            var mensajeFinal = "Error de validación"
+                            try {
+                                val errorType = object : com.google.gson.reflect.TypeToken<com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement>>() {}.type
+                                val errorResponse: com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement> = Gson().fromJson(errorBody, errorType)
+                                if (errorResponse != null && errorResponse.data.isJsonObject) {
+                                    val errors = errorResponse.data.asJsonObject
+                                    mensajeFinal = buildString {
+                                        append(errorResponse.mensaje).append("\n")
+                                        errors.entrySet().forEach { entry ->
+                                            append("• ${entry.key}: ${entry.value.asString}\n")
+                                        }
+                                    }
+                                } else if (errorResponse != null) {
+                                    mensajeFinal = errorResponse.mensaje
+                                }
+                            } catch (ex: Exception) {
+                                mensajeFinal = "Error inesperado del servidor"
+                            }
+                            SnackbarManager.showMessage(mensajeFinal)
                         } catch (e: Exception) {
                             SnackbarManager.showMessage("Error: ${e.message}")
                         }

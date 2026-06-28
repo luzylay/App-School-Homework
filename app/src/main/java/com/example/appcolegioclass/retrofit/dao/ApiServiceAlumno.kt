@@ -1,26 +1,23 @@
 package com.example.appcolegioclass.retrofit.dao
 
 import com.example.appcolegioclass.retrofit.entidades.Alumno
-import retrofit2.http.Body
-import retrofit2.http.DELETE
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Path
+import com.example.appcolegioclass.retrofit.entidades.ApiResponse
+import com.google.gson.JsonElement
+import retrofit2.http.*
 
 interface ApiServiceAlumno {
-    @GET("/alumno/lista")
-    suspend fun listarAlumnos(): List<Alumno>
+    @GET("/alu/lista")
+    suspend fun listarAlumnos(): ApiResponse<JsonElement>
 
-    @POST("/alumno/registrar")
-    suspend fun registrarAlumno(@Body bean: Alumno)
+    @POST("/alu/registrar")
+    suspend fun registrarAlumno(@Body bean: Alumno): ApiResponse<JsonElement>
 
-    @DELETE("/alumno/eliminar/{id}")
-    suspend fun eliminarAlumno(@Path("id") id: Int)
+    @HTTP(method = "DELETE", path = "/alu/eliminar/{id}", hasBody = true)
+    suspend fun eliminarAlumno(@Path("id") id: Int, @Body version: Int)
 
-    @PUT("/alumno/actualizar")
-    suspend fun actualizarAlumno(@Body bean: Alumno)
+    @PUT("/alu/actualizar")
+    suspend fun actualizarAlumno(@Body bean: Alumno): ApiResponse<JsonElement>
 
-    @GET("/alumno/buscar/{id}")
-    suspend fun buscarAlumno(@Path("id") id: Int): Alumno
+    @GET("/alu/buscar/{id}")
+    suspend fun buscarAlumno(@Path("id") id: Int): ApiResponse<JsonElement>
 }

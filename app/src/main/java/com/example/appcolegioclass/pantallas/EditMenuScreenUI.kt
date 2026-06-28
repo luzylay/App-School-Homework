@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -44,14 +45,17 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import com.example.appcolegioclass.retrofit.CloudinaryClient
 import com.example.appcolegioclass.retrofit.RetrofitClient
+import com.example.appcolegioclass.retrofit.entidades.ErrorResponse
 import com.example.appcolegioclass.retrofit.entidades.Menu
 import com.example.appcolegioclass.util.SnackbarManager
 import com.example.appcolegioclass.utils.createImageUri
 import com.example.appcolegioclass.utils.uriToMultipart
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.HttpException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +69,7 @@ fun EditarMenu(onBack: () -> Unit, codigo: Int) {
     var stock by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var foto by remember { mutableStateOf("") }
+    var version by remember { mutableIntStateOf(1) }
 
     val context = LocalContext.current
     var imageUri by remember {
@@ -84,30 +89,34 @@ fun EditarMenu(onBack: () -> Unit, codigo: Int) {
             }
         }
 
-    var datos by remember { mutableStateOf<Menu?>(null) }
-    LaunchedEffect(true) {
-        datos= RetrofitClient.menuApi.buscarPorCodigo(codigo)
-        datos?.let {
-            nombre = it.nombre
-            nomCategoria = it.categoria
-            stock = it.stock.toString()
-            precio = it.precio.toString()
-            foto = it.foto
-        }
-    }
-
     LaunchedEffect(codigo) {
-        scope.launch {
-            try {
-                val menu = RetrofitClient.menuApi.buscarPorCodigo(codigo)
-                nombre = menu.nombre
-                nomCategoria = menu.categoria
-                stock = menu.stock.toString()
-                precio = menu.precio.toString()
-                foto = menu.foto
-            } catch (e: Exception) {
-                SnackbarManager.showMessage("Error al cargar menú")
+        try {
+            val response = RetrofitClient.menuApi.buscarPorCodigo(codigo)
+            if (response.success) {
+                val gson = com.google.gson.Gson()
+                val m: Menu? = when {
+                    response.data.isJsonArray -> {
+                        val listType = object : com.google.gson.reflect.TypeToken<List<Menu>>() {}.type
+                        val menus: List<Menu> = gson.fromJson(response.data, listType)
+                        menus.firstOrNull()
+                    }
+                    response.data.isJsonObject -> {
+                        gson.fromJson(response.data, Menu::class.java)
+                    }
+                    else -> null
+                }
+                
+                m?.let {
+                    nombre = it.nombre
+                    nomCategoria = it.categoria
+                    stock = it.stock.toString()
+                    precio = it.precio.toString()
+                    foto = it.foto
+                    version = it.version
+                }
             }
+        } catch (e: Exception) {
+            SnackbarManager.showMessage("Error al cargar menú")
         }
     }
 
@@ -240,7 +249,8 @@ fun EditarMenu(onBack: () -> Unit, codigo: Int) {
                                         nomCategoria,
                                         stock.toIntOrNull() ?: 0,
                                         precio.toDoubleOrNull() ?: 0.0,
-                                        urlImagen
+                                        urlImagen,
+                                        version
                                     )
                                 )
                                 SnackbarManager.showMessage("Menú actualizado")
@@ -248,6 +258,27 @@ fun EditarMenu(onBack: () -> Unit, codigo: Int) {
                             } else {
                                 SnackbarManager.showMessage("Por favor complete todos los campos")
                             }
+                        } catch (e: HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            var mensajeFinal = "Error de validación"
+                            try {
+                                val errorType = object : com.google.gson.reflect.TypeToken<com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement>>() {}.type
+                                val errorResponse: com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement> = Gson().fromJson(errorBody, errorType)
+                                if (errorResponse != null && errorResponse.data.isJsonObject) {
+                                    val errors = errorResponse.data.asJsonObject
+                                    mensajeFinal = buildString {
+                                        append(errorResponse.mensaje).append("\n")
+                                        errors.entrySet().forEach { entry ->
+                                            append("• ${entry.key}: ${entry.value.asString}\n")
+                                        }
+                                    }
+                                } else if (errorResponse != null) {
+                                    mensajeFinal = errorResponse.mensaje
+                                }
+                            } catch (ex: Exception) {
+                                mensajeFinal = "Error inesperado del servidor"
+                            }
+                            SnackbarManager.showMessage(mensajeFinal)
                         } catch (e: Exception) {
                             SnackbarManager.showMessage("Error: ${e.message}")
                         }
