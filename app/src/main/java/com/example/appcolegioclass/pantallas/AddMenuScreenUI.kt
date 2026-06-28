@@ -228,25 +228,27 @@ fun AdicionarMenu(
                             }
                         } catch (e: HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
-                            var mensajeFinal = "Error de validación"
+                            var mensaje = ""
                             try {
-                                val errorType = object : com.google.gson.reflect.TypeToken<com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement>>() {}.type
-                                val errorResponse: com.example.appcolegioclass.retrofit.entidades.ApiResponse<com.google.gson.JsonElement> = Gson().fromJson(errorBody, errorType)
-                                if (errorResponse != null && errorResponse.data.isJsonObject) {
-                                    val errors = errorResponse.data.asJsonObject
-                                    mensajeFinal = buildString {
-                                        append(errorResponse.mensaje).append("\n")
-                                        errors.entrySet().forEach { entry ->
-                                            append("• ${entry.key}: ${entry.value.asString}\n")
+                                val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                                // Caso 1: validaciones (data != null)
+                                if (errorResponse.data != null && errorResponse.data.isNotEmpty()) {
+                                    val validaciones = buildString {
+                                        append(errorResponse.mensaje)
+                                        append("\n\n")
+                                        errorResponse.data.forEach { (clave, valor) ->
+                                            append("• $clave : $valor\n")
                                         }
                                     }
-                                } else if (errorResponse != null) {
-                                    mensajeFinal = errorResponse.mensaje
+                                    mensaje = validaciones
+                                } else {
+                                    // Caso 2: error simple (ej: nombre existe)
+                                    mensaje = errorResponse.mensaje
                                 }
                             } catch (ex: Exception) {
-                                mensajeFinal = "Error inesperado del servidor"
+                                mensaje = e.message()
                             }
-                            SnackbarManager.showMessage(mensajeFinal)
+                            SnackbarManager.showMessage(mensaje)
                         } catch (e: Exception) {
                             SnackbarManager.showMessage("Error: ${e.message}")
                         }
