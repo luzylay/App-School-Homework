@@ -1,20 +1,25 @@
-# local.properties
-# /build
-# /captures
-# .externalNativeBuild
-# .cxx
+# --- ARCHIVOS LOCALES Y CONFIGURACIÓN PERSONAL ---
+local.properties
+.gradle/
+.idea/
+*.iml
+*.hprof
+.idea/caches
+.idea/libraries
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+captures/
 
-# Archivos de volcado de memoria (Memory Dumps)
-# *.hprof
+# --- ARCHIVOS DE COMPILACIÓN ---
+build/
+app/build/
+*/build/
 
-# Archivos temporales de Android Studio
-# .idea/caches
-# .idea/libraries
-# .idea/workspace.xml
-# .idea/navEditor.xml
-# .idea/assetWizardSettings.xml
-# *.iml
-# .gradle
+# --- FIREBASE Y SEGURIDAD (¡CRÍTICO!) ---
+# Nunca subir llaves de API o archivos de configuración con secretos
+app/google-services.json
 
-# Guía local de actualización
-# GUIA_ACTUALIZACION.md
+# --- SISTEMA ---
+.DS_Store
+Thumbs.db

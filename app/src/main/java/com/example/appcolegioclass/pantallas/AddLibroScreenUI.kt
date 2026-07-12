@@ -9,11 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -31,121 +27,125 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcolegioclass.firebase.entidades.Libro
 import com.example.appcolegioclass.firebase.viewmodel.LibroViewModel
-import com.google.firebase.FirebaseApp
-import com.google.firebase.firestore.FirebaseFirestore
-import com.example.appcolegioclass.util.SnackbarManager
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
+/**
+ * PANTALLA: Adicionar Libro
+ * 
+ * Esta pantalla permite al usuario registrar un nuevo libro en Firebase Firestore.
+ * Sigue el patrón MVVM y utiliza Jetpack Compose para la UI.
+ * 
+ * @param onBack Callback para navegar hacia atrás en el flujo de la aplicación.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdicionarLibro(onBack:()->Unit){
+fun AdicionarLibro(onBack: () -> Unit) {
 
+    // --- ESTADOS DE LA INTERFAZ (Campos de texto) ---
     var isbn by remember { mutableStateOf("") }
     var titulo by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    //Objeto de la clase LibroViewModel
+    // --- GESTIÓN DE SNACKBAR (Notificaciones) ---
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // --- INTEGRACIÓN CON VIEWMODEL ---
     val viewLib: LibroViewModel = viewModel()
-    //Recuperar la variable "mensaje" de tipo StateFlow
     val men by viewLib.mensaje.collectAsState()
 
-    //Ejecutar codigo cuando se actualiza la variable "men"
-    LaunchedEffect(men){
-        //Validar que no sea nulo
-        men?.let{
-            SnackbarManager.showMessage(it)
+    // --- ESCUCHA DE EVENTOS (Mensajes de éxito/error) ---
+    LaunchedEffect(men) {
+        men?.let {
+            scope.launch {
+                snackbarHostState.showSnackbar(it)
+            }
+            // Si la operación fue exitosa, cerramos la pantalla actual
             if (it == "Libro Registrado") {
                 onBack()
             }
+            // Limpiamos el mensaje en el ViewModel para evitar repeticiones
             viewLib.limpiarMensaje()
         }
     }
 
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Registrar Libro") },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {onBack()}
-                    ) {
+                    IconButton(onClick = { onBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
+                            contentDescription = "Regresar"
                         )
                     }
                 }
             )
         }
-    ){ espacio->
+    ) { espacio ->
         Column(
             modifier = Modifier
                 .padding(espacio)
-                .padding(15.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // --- FORMULARIO DE REGISTRO ---
             OutlinedTextField(
                 value = isbn,
-                onValueChange = {isbn=it},
-                label = {Text("Ingresar isbn")},
-                modifier = Modifier
-                    .fillMaxWidth()
+                onValueChange = { isbn = it },
+                label = { Text("ISBN del Libro") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             OutlinedTextField(
                 value = titulo,
-                onValueChange = {titulo=it},
-                label = {Text("Ingresar titulo")},
-                modifier = Modifier
-                    .fillMaxWidth()
+                onValueChange = { titulo = it },
+                label = { Text("Título") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             OutlinedTextField(
                 value = precio,
-                onValueChange = {precio=it},
-                label = {Text("Ingresar precio")},
-                modifier = Modifier
-                    .fillMaxWidth()
+                onValueChange = { precio = it },
+                label = { Text("Precio (S/.)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
             OutlinedTextField(
                 value = stock,
-                onValueChange = {stock=it},
-                label = {Text("Ingresar stock")},
-                modifier = Modifier
-                    .fillMaxWidth()
+                onValueChange = { stock = it },
+                label = { Text("Stock inicial") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
+            // Espaciador flexible para empujar el botón al fondo
             Column(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Bottom
-            ){
+            ) {
                 Button(
                     onClick = {
+                        // Validación simple y conversión segura de tipos
                         val p = precio.toDoubleOrNull() ?: 0.0
                         val s = stock.toIntOrNull() ?: 0
                         viewLib.save(Libro(isbn, titulo, p, s))
                     },
                     modifier = Modifier
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(5.dp)
-                ){
-                    Text("Grabar")
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Grabar Libro")
                 }
             }
-
         }
-
     }
-
-
 }
