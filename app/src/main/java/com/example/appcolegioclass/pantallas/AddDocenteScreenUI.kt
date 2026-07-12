@@ -96,7 +96,7 @@ fun AdicionarDocente(
             TopAppBar(
                 title = { Text("Registrar Docente", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1976D2),
+                    containerColor = Color.Blue,
                     titleContentColor = Color.White
                 ),
                 navigationIcon = {
@@ -241,10 +241,9 @@ fun AdicionarDocente(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                shape = RoundedCornerShape(5.dp) // ESTILO: Bordes rectangulares suaves
             ) {
-                Text("Grabar Docente", fontWeight = FontWeight.Bold)
+                Text("Grabar", fontWeight = FontWeight.Bold)
             }
         }
     }

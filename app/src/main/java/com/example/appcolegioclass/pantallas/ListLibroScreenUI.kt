@@ -67,9 +67,9 @@ fun PantallaLibros(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Catálogo de Libros", fontWeight = FontWeight.Bold) },
+                title = { Text("Libros", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1976D2), // Azul Material
+                    containerColor = Color.Blue,
                     titleContentColor = Color.White
                 )
             )
@@ -78,7 +78,7 @@ fun PantallaLibros(
             // Barra de navegación personalizada
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF0D47A1)
+                contentColor = Color(0xFF003366)
             ) {
                 Row(
                     modifier = Modifier
@@ -89,6 +89,7 @@ fun PantallaLibros(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
+                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -98,7 +99,7 @@ fun PantallaLibros(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
                         ) {
                             Text(
                                 text = label,
@@ -111,9 +112,7 @@ fun PantallaLibros(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { addLibro() },
-                containerColor = Color(0xFF1976D2),
-                contentColor = Color.White
+                onClick = { addLibro() }
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir Libro")
             }
@@ -121,25 +120,22 @@ fun PantallaLibros(
     ) { espacio ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(espacio)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 15.dp, vertical = 8.dp)
         ) {
             // --- BUSCADOR ---
             OutlinedTextField(
                 value = textoBusqueda,
                 onValueChange = { textoBusqueda = it },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                placeholder = { Text("Buscar por título o ISBN...") },
-                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                label = { Text("Buscar") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) }
             )
 
             // --- LISTADO ---
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 8.dp),
+                contentPadding = PaddingValues(vertical = 15.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(
@@ -169,42 +165,44 @@ fun PantallaLibros(
                         state = dismissState,
                         backgroundContent = {
                             Card(
-                                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F)),
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color.Red)
                             ) {
                                 Box(
-                                    modifier = Modifier.fillMaxSize().padding(end = 20.dp),
+                                    modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White)
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.White)
                                 }
                             }
                         }
                     ) {
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            shape = RoundedCornerShape(12.dp)
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(15.dp),
+                                verticalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Text(
-                                    text = bean.titulo,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    text = "ISBN : ${bean.isbn}",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.titleMedium
                                 )
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("ISBN: ${bean.isbn}", style = MaterialTheme.typography.bodySmall)
-                                    Text("S/. ${bean.precio}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                                }
-                                Text("Stock disponible: ${bean.stock}", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    text = "Título : ${bean.titulo}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "Precio : S/. ${bean.precio}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "Stock : ${bean.stock}",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                             }
                         }
                     }
@@ -228,8 +226,8 @@ fun PantallaLibros(
                                 libroEliminar?.let { viewLib.delete(it.isbn) }
                                 mostrarDialogo = false
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                        ) { Text("Eliminar", color = Color.White) }
+                            shape = RoundedCornerShape(5.dp)
+                        ) { Text("Sí", fontWeight = FontWeight.Bold) }
                     },
                     dismissButton = {
                         OutlinedButton(
@@ -238,8 +236,9 @@ fun PantallaLibros(
                                     dismissActual?.snapTo(SwipeToDismissBoxValue.Settled)
                                     mostrarDialogo = false
                                 }
-                            }
-                        ) { Text("Cancelar") }
+                            },
+                            shape = RoundedCornerShape(5.dp)
+                        ) { Text("No", fontWeight = FontWeight.Bold) }
                     }
                 )
             }

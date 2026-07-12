@@ -105,9 +105,9 @@ fun ListaDocente(
         topBar = {
             // --- ESTILO: Barra superior con colores personalizados ---
             TopAppBar(
-                title = { Text("Gestión de Docentes", fontWeight = FontWeight.Bold) },
+                title = { Text("Docente", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1976D2), // Azul Material
+                    containerColor = Color.Blue, // Color de fondo
                     titleContentColor = Color.White // Color del texto
                 )
             )
@@ -115,7 +115,7 @@ fun ListaDocente(
         bottomBar = {
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF0D47A1)
+                contentColor = Color(0xFF003366)
             ) {
                 Row(
                     modifier = Modifier
@@ -126,6 +126,7 @@ fun ListaDocente(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
+                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -135,7 +136,7 @@ fun ListaDocente(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
                         ) {
                             Text(
                                 text = label,
@@ -149,9 +150,7 @@ fun ListaDocente(
         floatingActionButton = {
             // --- FLUJO: Botón para navegar a la pantalla de agregar docente ---
             FloatingActionButton(
-                onClick = { addDocente() },
-                containerColor = Color(0xFF1976D2),
-                contentColor = Color.White
+                onClick = { addDocente() }
             ) {
                 // --- ESTILO: Icono de "+" ---
                 Icon(
