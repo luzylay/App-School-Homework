@@ -58,6 +58,7 @@ fun ListaDocente(
     verCursos: () -> Unit,
     verAlumnos: () -> Unit,
     verMenus: () -> Unit,
+    verLibros: () -> Unit,
     db: AppDatabase,
     datosDocente: (Int) -> Unit,
 ) {
@@ -129,7 +130,8 @@ fun ListaDocente(
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
-                        "Menús" to verMenus
+                        "Menús" to verMenus,
+                        "Libros" to verLibros
                     )
                     navItems.forEach { (label, action) ->
                         TextButton(

@@ -42,7 +42,8 @@ fun ListaAlumno(
     verDocentes: () -> Unit,
     verCursos: () -> Unit,
     verAlumnos: () -> Unit,
-    verMenus: () -> Unit
+    verMenus: () -> Unit,
+    verLibros: () -> Unit
 ) {
     // --- ESTADOS Y LÓGICA DE NEGOCIO ---
     val scope = rememberCoroutineScope()
@@ -125,7 +126,8 @@ fun ListaAlumno(
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
-                        "Menús" to verMenus
+                        "Menús" to verMenus,
+                        "Libros" to verLibros
                     )
                     navItems.forEach { (label, action) ->
                         TextButton(

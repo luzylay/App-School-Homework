@@ -19,6 +19,8 @@ import com.example.appcolegioclass.local.AppDatabase
 import com.example.appcolegioclass.pantallas.EditarCurso
 import com.example.appcolegioclass.pantallas.EditarDocente
 import com.example.appcolegioclass.pantallas.ListaCurso
+import com.example.appcolegioclass.pantallas.AdicionarLibro
+import com.example.appcolegioclass.pantallas.PantallaLibros
 import com.example.appcolegioclass.util.SnackbarManager
 import com.example.appcolegioclass.pantallas.AdicionarDocente
 import com.example.appcolegioclass.pantallas.ListaDocente
@@ -46,6 +48,9 @@ data object AddMenu
 
 data object ListAlumno
 data object AddAlumno
+
+data object ListLibro
+data object AddLibro
 
 @Composable
 fun Navegar() {
@@ -102,6 +107,10 @@ fun Navegar() {
                                 backStack.clear()
                                 backStack.add(ListMenu)
                             },
+                            verLibros = {
+                                backStack.clear()
+                                backStack.add(ListLibro)
+                            },
                             db = db,
                             datosDocente = { backStack.add(EditDocente(it)) }
                         )
@@ -138,6 +147,10 @@ fun Navegar() {
                             verMenus = {
                                 backStack.clear()
                                 backStack.add(ListMenu)
+                            },
+                            verLibros = {
+                                backStack.clear()
+                                backStack.add(ListLibro)
                             }
                         )
                     }
@@ -169,6 +182,10 @@ fun Navegar() {
                             verMenus = {
                                 backStack.clear()
                                 backStack.add(ListMenu)
+                            },
+                            verLibros = {
+                                backStack.clear()
+                                backStack.add(ListLibro)
                             }
                         )
                     }
@@ -180,6 +197,8 @@ fun Navegar() {
                     is EditAlumno -> NavEntry(key) {
                         EditarAlumno(onBack = { backStack.removeLastOrNull() }, codigo = key.cod)
                     }
+
+
 
                     // FLUJO: Pantalla de Lista de Cursos
                     is ListCurso -> NavEntry(key) {
@@ -201,6 +220,10 @@ fun Navegar() {
                                 backStack.clear()
                                 backStack.add(ListMenu)
                             },
+                            verLibros = {
+                                backStack.clear()
+                                backStack.add(ListLibro)
+                            },
                             db = db,
                             datosCurso = { backStack.add(EditCurso(it)) }
                         )
@@ -215,6 +238,36 @@ fun Navegar() {
                     // FLUJO: Pantalla de Registro de Curso
                     is AddCurso -> NavEntry(key) {
                         AdicionarCurso(onBack = { backStack.removeLastOrNull() }, db)
+                    }
+
+                    is ListLibro -> NavEntry(key) {
+                        PantallaLibros(
+                            addLibro = { backStack.add(AddLibro) },
+                            verDocentes = {
+                                backStack.clear()
+                                backStack.add(ListDocente)
+                            },
+                            verCursos = {
+                                backStack.clear()
+                                backStack.add(ListCurso)
+                            },
+                            verAlumnos = {
+                                backStack.clear()
+                                backStack.add(ListAlumno)
+                            },
+                            verMenus = {
+                                backStack.clear()
+                                backStack.add(ListMenu)
+                            },
+                            verLibros = {
+                                backStack.clear()
+                                backStack.add(ListLibro)
+                            }
+                        )
+                    }
+
+                    is AddLibro -> NavEntry(key) {
+                        AdicionarLibro(onBack = { backStack.removeLastOrNull() })
                     }
 
                     else -> NavEntry(Unit) { Text("Ruta desconocida") }
