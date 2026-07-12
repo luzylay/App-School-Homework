@@ -1,19 +1,25 @@
-# Política de Seguridad
+# Política de Seguridad 🛡️
 
-## Versiones Compatibles
+## Reporte de Vulnerabilidades
 
-Actualmente, solo la versión más reciente del proyecto recibe actualizaciones de seguridad.
+Valoramos la seguridad de este proyecto. Si encuentras alguna vulnerabilidad, por favor **NO abras un "Issue" público**.
+
+### Cómo reportar
+Para proteger la privacidad de los datos y la integridad del proyecto, utiliza la función de **Reporte Privado de GitHub**:
+
+1. Ve a la pestaña **Security** de este repositorio.
+2. Selecciona **Advisories**.
+3. Haz clic en **Report a vulnerability**.
+
+Este método es privado y seguro, y nos permite trabajar en la solución sin exponer el problema públicamente ni requerir contacto por correo electrónico externo.
+
+## Versiones Soportadas
+
+Actualmente, solo se brindan actualizaciones de seguridad a la última versión en la rama `main`.
 
 | Versión | Soportada |
 | ------- | --------- |
-| 1.0.x   | ✅         |
-| < 1.0   | ❌         |
+| 1.0.x   | ✅ Sí      |
+| < 1.0   | ❌ No      |
 
-## Reportar una Vulnerabilidad
-
-Si encuentras un problema de seguridad, por favor no lo publiques en un "Issue". En su lugar:
-1. Envía un correo electrónico a tu-correo@ejemplo.com (puedes cambiar esto).
-2. Descríbenos el problema y cómo reproducirlo.
-3. Te responderemos en un plazo de 48 horas para coordinar la solución.
-
-¡Gracias por ayudar a mantener este proyecto seguro!
+Gracias por ayudarnos a mantener este colegio seguro. 😊
