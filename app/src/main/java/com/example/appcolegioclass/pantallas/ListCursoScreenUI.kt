@@ -102,17 +102,17 @@ fun ListaCurso(
         topBar = {
             // --- ESTILO: Barra superior con personalización de colores ---
             TopAppBar(
-                title = { Text("Cursos", fontWeight = FontWeight.Bold) },
+                title = { Text("Gestión de Cursos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue, // Fondo azul (Estilo)
-                    titleContentColor = Color.White // Texto blanco (Estilo)
+                    containerColor = Color(0xFF1976D2), // Azul Material
+                    titleContentColor = Color.White // Texto blanco
                 )
             )
         },
         bottomBar = {
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF003366)
+                contentColor = Color(0xFF0D47A1)
             ) {
                 Row(
                     modifier = Modifier
@@ -123,7 +123,6 @@ fun ListaCurso(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
-                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -133,7 +132,7 @@ fun ListaCurso(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
                         ) {
                             Text(
                                 text = label,
@@ -146,7 +145,11 @@ fun ListaCurso(
         },
         floatingActionButton = {
             // --- FLUJO: Botón flotante que dispara la navegación al formulario de registro ---
-            FloatingActionButton(onClick = addCurso) {
+            FloatingActionButton(
+                onClick = addCurso,
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White
+            ) {
                 // --- ESTILO: Icono visual de "+" ---
                 Icon(Icons.Default.Add, contentDescription = null)
             }

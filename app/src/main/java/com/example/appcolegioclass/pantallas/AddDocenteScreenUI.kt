@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -95,7 +96,7 @@ fun AdicionarDocente(
             TopAppBar(
                 title = { Text("Registrar Docente", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1976D2),
                     titleContentColor = Color.White
                 ),
                 navigationIcon = {
@@ -240,9 +241,10 @@ fun AdicionarDocente(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(5.dp) // ESTILO: Bordes rectangulares suaves
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
             ) {
-                Text("Grabar", fontWeight = FontWeight.Bold)
+                Text("Grabar Docente", fontWeight = FontWeight.Bold)
             }
         }
     }

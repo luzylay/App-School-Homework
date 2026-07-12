@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -21,6 +22,16 @@ import com.example.appcolegioclass.firebase.entidades.Libro
 import com.example.appcolegioclass.firebase.viewmodel.LibroViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * PANTALLA: Lista de Libros (Firebase)
+ * 
+ * Muestra el catálogo de libros almacenados en Firestore.
+ * Incluye funcionalidades de:
+ * - Listado en tiempo real.
+ * - Búsqueda por título o ISBN.
+ * - Eliminación mediante gesto Swipe-to-Dismiss con confirmación.
+ * - Navegación global.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaLibros(
@@ -31,19 +42,23 @@ fun PantallaLibros(
     verMenus: () -> Unit,
     verLibros: () -> Unit
 ) {
+    // --- INTEGRACIÓN CON VIEWMODEL ---
     val viewLib: LibroViewModel = viewModel()
     val lista by viewLib.libros.collectAsState()
     val scope = rememberCoroutineScope()
 
+    // --- ESTADOS LOCALES (Búsqueda y Diálogos) ---
     var mostrarDialogo by remember { mutableStateOf(false) }
     var libroEliminar by remember { mutableStateOf<Libro?>(null) }
     var dismissActual by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
     var textoBusqueda by remember { mutableStateOf("") }
 
+    // Cargar datos al iniciar la pantalla
     LaunchedEffect(Unit) {
         viewLib.findAll()
     }
 
+    // Filtrado de lista en memoria para respuesta instantánea
     val librosFiltrados = lista.filter {
         it.titulo.contains(textoBusqueda, ignoreCase = true) ||
                 it.isbn.contains(textoBusqueda, ignoreCase = true)
@@ -52,17 +67,18 @@ fun PantallaLibros(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Libros (Firebase)", fontWeight = FontWeight.Bold) },
+                title = { Text("Catálogo de Libros", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1976D2), // Azul Material
                     titleContentColor = Color.White
                 )
             )
         },
         bottomBar = {
+            // Barra de navegación personalizada
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF003366)
+                contentColor = Color(0xFF0D47A1)
             ) {
                 Row(
                     modifier = Modifier
@@ -73,7 +89,6 @@ fun PantallaLibros(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
-                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -83,7 +98,7 @@ fun PantallaLibros(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
                         ) {
                             Text(
                                 text = label,
@@ -95,8 +110,12 @@ fun PantallaLibros(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { addLibro() }) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = null)
+            FloatingActionButton(
+                onClick = { addLibro() },
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir Libro")
             }
         }
     ) { espacio ->
@@ -104,18 +123,23 @@ fun PantallaLibros(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(espacio)
-                .padding(horizontal = 15.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // --- BUSCADOR ---
             OutlinedTextField(
                 value = textoBusqueda,
                 onValueChange = { textoBusqueda = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Buscar libro") },
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                placeholder = { Text("Buscar por título o ISBN...") },
                 leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
             )
+
+            // --- LISTADO ---
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 15.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(
@@ -134,6 +158,7 @@ fun PantallaLibros(
                         }
                     )
 
+                    // Resetear el estado de Swipe si se cancela el diálogo
                     LaunchedEffect(dismissState.currentValue) {
                         if (dismissState.currentValue != SwipeToDismissBoxValue.Settled) {
                             dismissActual = dismissState
@@ -144,11 +169,12 @@ fun PantallaLibros(
                         state = dismissState,
                         backgroundContent = {
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color.Red)
+                                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F)),
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Box(
-                                    modifier = Modifier.fillMaxWidth().padding(30.dp),
+                                    modifier = Modifier.fillMaxSize().padding(end = 20.dp),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White)
@@ -157,22 +183,35 @@ fun PantallaLibros(
                         }
                     ) {
                         Card(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(2.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Column(
-                                modifier = Modifier.padding(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text("ISBN : ${bean.isbn}", fontWeight = FontWeight.Bold)
-                                Text("Título : ${bean.titulo}")
-                                Text("Precio : S/. ${bean.precio}")
-                                Text("Stock : ${bean.stock}")
+                                Text(
+                                    text = bean.titulo,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("ISBN: ${bean.isbn}", style = MaterialTheme.typography.bodySmall)
+                                    Text("S/. ${bean.precio}", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                }
+                                Text("Stock disponible: ${bean.stock}", style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
                 }
             }
 
+            // --- DIÁLOGO DE CONFIRMACIÓN ---
             if (mostrarDialogo) {
                 AlertDialog(
                     onDismissRequest = {
@@ -181,15 +220,16 @@ fun PantallaLibros(
                             mostrarDialogo = false
                         }
                     },
-                    title = { Text("Confirmación") },
-                    text = { Text("¿Seguro de eliminar el libro ${libroEliminar?.titulo}?") },
+                    title = { Text("Eliminar Libro") },
+                    text = { Text("¿Deseas eliminar permanentemente '${libroEliminar?.titulo}'?") },
                     confirmButton = {
                         Button(
                             onClick = {
                                 libroEliminar?.let { viewLib.delete(it.isbn) }
                                 mostrarDialogo = false
-                            }
-                        ) { Text("Sí") }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                        ) { Text("Eliminar", color = Color.White) }
                     },
                     dismissButton = {
                         OutlinedButton(
@@ -199,7 +239,7 @@ fun PantallaLibros(
                                     mostrarDialogo = false
                                 }
                             }
-                        ) { Text("No") }
+                        ) { Text("Cancelar") }
                     }
                 )
             }

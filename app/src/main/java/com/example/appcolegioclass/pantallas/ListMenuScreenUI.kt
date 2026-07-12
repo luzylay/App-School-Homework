@@ -127,9 +127,9 @@ fun ListaMenu(
         topBar = {
             // --- ESTILO: Barra superior con colores personalizados ---
             TopAppBar(
-                title = { Text("Menús", fontWeight = FontWeight.Bold) },
+                title = { Text("Gestión de Menús", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1976D2),
                     titleContentColor = Color.White
                 )
             )
@@ -137,7 +137,7 @@ fun ListaMenu(
         bottomBar = {
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5),
-                contentColor = Color(0xFF003366)
+                contentColor = Color(0xFF0D47A1)
             ) {
                 Row(
                     modifier = Modifier
@@ -148,7 +148,6 @@ fun ListaMenu(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
-                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -158,7 +157,7 @@ fun ListaMenu(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
                         ) {
                             Text(
                                 text = label,
@@ -172,7 +171,9 @@ fun ListaMenu(
         floatingActionButton = {
             // --- FLUJO: Botón para navegar a la pantalla de agregar docente ---
             FloatingActionButton(
-                onClick = { addMenu() }
+                onClick = { addMenu() },
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White
             ) {
                 // --- ESTILO: Icono de "+" ---
                 Icon(

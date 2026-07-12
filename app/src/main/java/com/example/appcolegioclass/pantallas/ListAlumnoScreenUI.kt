@@ -99,9 +99,9 @@ fun ListaAlumno(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Alumnos", fontWeight = FontWeight.Bold) },
+                title = { Text("Gestión de Alumnos", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1976D2),
                     titleContentColor = Color.White
                 )
             )
@@ -111,7 +111,7 @@ fun ListaAlumno(
             // Se implementa con scroll horizontal para soportar múltiples opciones
             BottomAppBar(
                 containerColor = Color(0xFFF5F5F5), // Gris corporativo claro
-                contentColor = Color(0xFF003366)    // Azul marino institucional
+                contentColor = Color(0xFF0D47A1)    // Azul marino institucional
             ) {
                 Row(
                     modifier = Modifier
@@ -122,7 +122,6 @@ fun ListaAlumno(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     val navItems = listOf(
-                        "Inicio" to verDocentes,
                         "Docentes" to verDocentes,
                         "Cursos" to verCursos,
                         "Alumnos" to verAlumnos,
@@ -132,7 +131,7 @@ fun ListaAlumno(
                     navItems.forEach { (label, action) ->
                         TextButton(
                             onClick = action,
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF003366))
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF0D47A1))
                         ) {
                             Text(
                                 text = label,
@@ -145,7 +144,11 @@ fun ListaAlumno(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { addAlumno() }) {
+            FloatingActionButton(
+                onClick = { addAlumno() },
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White
+            ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Añadir nuevo alumno")
             }
         }
