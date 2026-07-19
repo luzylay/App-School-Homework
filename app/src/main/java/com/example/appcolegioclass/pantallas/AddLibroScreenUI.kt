@@ -65,12 +65,17 @@ fun AdicionarLibro(onBack: () -> Unit) {
     // --- ESCUCHA DE EVENTOS (Mensajes de éxito/error) ---
     LaunchedEffect(men) {
         men?.let {
-            scope.launch {
-                snackbarHostState.showSnackbar(it)
-            }
-            // Si la operación fue exitosa, cerramos la pantalla actual
             if (it == "Libro guardado con éxito") {
+                // Mostramos el aviso y esperamos un momento antes de regresar
+                scope.launch {
+                    snackbarHostState.showSnackbar(it)
+                }
+                kotlinx.coroutines.delay(1500)
                 onBack()
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(it)
+                }
             }
             // Limpiamos el mensaje en el ViewModel para evitar repeticiones
             viewLib.limpiarMensaje()

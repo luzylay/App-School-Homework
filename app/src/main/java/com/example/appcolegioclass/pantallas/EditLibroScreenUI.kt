@@ -56,11 +56,17 @@ fun EditarLibro(onBack: () -> Unit, isbn: String) {
     // --- ESCUCHA DE EVENTOS ---
     LaunchedEffect(men) {
         men?.let {
-            scope.launch {
-                snackbarHostState.showSnackbar(it)
-            }
             if (it == "Libro guardado con éxito") {
+                // Mostramos el aviso y esperamos un momento antes de regresar
+                scope.launch {
+                    snackbarHostState.showSnackbar(it)
+                }
+                kotlinx.coroutines.delay(1500)
                 onBack()
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(it)
+                }
             }
             viewLib.limpiarMensaje()
         }
@@ -159,7 +165,7 @@ fun EditarLibro(onBack: () -> Unit, isbn: String) {
                         .padding(bottom = 16.dp),
                     shape = RoundedCornerShape(5.dp)
                 ) {
-                    Text("Actualizar Libro", fontWeight = FontWeight.Bold)
+                    Text("Actualizar", fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -36,7 +36,7 @@ class LibroViewModel: ViewModel(){
         viewModelScope.launch {
             repo.eliminarLibro(isbn)
                 .onSuccess {
-                    _mensaje.value = "Libro eliminado"
+                    _mensaje.value = "Libro eliminado con éxito"
                     findAll()
                 }
                 .onFailure {
@@ -49,7 +49,7 @@ class LibroViewModel: ViewModel(){
         viewModelScope.launch {
             repo.registrarLibro(lib)
                 .onSuccess {
-                    _mensaje.value = "Libro guardado"
+                    _mensaje.value = "Libro guardado con éxito"
                     findAll()
                 }
                 .onFailure {
