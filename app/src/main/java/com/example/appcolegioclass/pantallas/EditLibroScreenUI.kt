@@ -1,32 +1,11 @@
 package com.example.appcolegioclass.pantallas
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,42 +16,52 @@ import com.example.appcolegioclass.firebase.viewmodel.LibroViewModel
 import kotlinx.coroutines.launch
 
 /**
- * PANTALLA: Adicionar Libro
+ * PANTALLA: Editar Libro
  * 
- * Esta pantalla permite al usuario registrar un nuevo libro en Firebase Firestore.
- * Sigue el patrón MVVM y utiliza Jetpack Compose para la UI.
- * 
- * @param onBack Callback para navegar hacia atrás en el flujo de la aplicación.
+ * Permite modificar los datos de un libro existente en Firebase Firestore.
+ * El ISBN actúa como identificador único y no es editable para mantener la integridad.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdicionarLibro(onBack: () -> Unit) {
+fun EditarLibro(onBack: () -> Unit, isbn: String) {
 
-    // --- ESTADOS DE LA INTERFAZ (Campos de texto) ---
-    var isbn by remember { mutableStateOf("") }
+    // --- INTEGRACIÓN CON VIEWMODEL ---
+    val viewLib: LibroViewModel = viewModel()
+    val libroSeleccionado by viewLib.libroSeleccionado.collectAsState()
+    val men by viewLib.mensaje.collectAsState()
+
+    // --- ESTADOS DE LA INTERFAZ ---
     var titulo by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
 
-    // --- GESTIÓN DE SNACKBAR (Notificaciones) ---
+    // --- GESTIÓN DE NOTIFICACIONES ---
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // --- INTEGRACIÓN CON VIEWMODEL ---
-    val viewLib: LibroViewModel = viewModel()
-    val men by viewLib.mensaje.collectAsState()
+    // --- CARGA DE DATOS INICIAL ---
+    LaunchedEffect(isbn) {
+        viewLib.findById(isbn)
+    }
 
-    // --- ESCUCHA DE EVENTOS (Mensajes de éxito/error) ---
+    // --- ASIGNACIÓN DE DATOS CARGADOS ---
+    LaunchedEffect(libroSeleccionado) {
+        libroSeleccionado?.let {
+            titulo = it.titulo
+            precio = it.precio.toString()
+            stock = it.stock.toString()
+        }
+    }
+
+    // --- ESCUCHA DE EVENTOS ---
     LaunchedEffect(men) {
         men?.let {
             scope.launch {
                 snackbarHostState.showSnackbar(it)
             }
-            // Si la operación fue exitosa, cerramos la pantalla actual
             if (it == "Libro guardado con éxito") {
                 onBack()
             }
-            // Limpiamos el mensaje en el ViewModel para evitar repeticiones
             viewLib.limpiarMensaje()
         }
     }
@@ -81,13 +70,16 @@ fun AdicionarLibro(onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Registrar Libro", fontWeight = FontWeight.Bold) },
+                title = { Text("Editar Libro", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Blue,
                     titleContentColor = Color.White
                 ),
                 navigationIcon = {
-                    IconButton(onClick = { onBack() }) {
+                    IconButton(onClick = { 
+                        viewLib.limpiarSeleccion()
+                        onBack() 
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Regresar",
@@ -104,14 +96,16 @@ fun AdicionarLibro(onBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // --- FORMULARIO DE REGISTRO ---
+            // ISBN deshabilitado (es la llave primaria en Firestore en este diseño)
             OutlinedTextField(
                 value = isbn,
-                onValueChange = { isbn = it },
-                label = { Text("ISBN del Libro") },
+                onValueChange = { },
+                label = { Text("ISBN (No editable)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                enabled = false,
+                readOnly = true
             )
+
             OutlinedTextField(
                 value = titulo,
                 onValueChange = { titulo = it },
@@ -119,6 +113,7 @@ fun AdicionarLibro(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
             OutlinedTextField(
                 value = precio,
                 onValueChange = { precio = it },
@@ -126,30 +121,27 @@ fun AdicionarLibro(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
             OutlinedTextField(
                 value = stock,
                 onValueChange = { stock = it },
-                label = { Text("Stock inicial") },
+                label = { Text("Stock actual") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            // Espaciador flexible para empujar el botón al fondo
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 Button(
                     onClick = {
-                        // Validación de campos obligatorios
-                        if (isbn.isBlank() || titulo.isBlank() || precio.isBlank() || stock.isBlank()) {
+                        if (titulo.isBlank() || precio.isBlank() || stock.isBlank()) {
                             scope.launch {
                                 snackbarHostState.showSnackbar("Por favor, complete todos los campos")
                             }
                             return@Button
                         }
-
-                        // Conversión segura de tipos
                         val p = precio.toDoubleOrNull()
                         val s = stock.toIntOrNull()
 
@@ -167,7 +159,7 @@ fun AdicionarLibro(onBack: () -> Unit) {
                         .padding(bottom = 16.dp),
                     shape = RoundedCornerShape(5.dp)
                 ) {
-                    Text("Grabar Libro", fontWeight = FontWeight.Bold)
+                    Text("Actualizar Libro", fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -31,6 +31,7 @@ import com.example.appcolegioclass.pantallas.EditarMenu
 import com.example.appcolegioclass.pantallas.ListaAlumno
 import com.example.appcolegioclass.pantallas.AdicionarAlumno
 import com.example.appcolegioclass.pantallas.EditarAlumno
+import com.example.appcolegioclass.pantallas.EditarLibro
 
 // --- FLUJO DE NAVEGACIÓN: Definición de las rutas (destinos) de la aplicación ---
 data object ListDocente
@@ -51,6 +52,7 @@ data object AddAlumno
 
 data object ListLibro
 data object AddLibro
+data class EditLibro(val isbn: String)
 
 @Composable
 fun Navegar() {
@@ -243,6 +245,7 @@ fun Navegar() {
                     is ListLibro -> NavEntry(key) {
                         PantallaLibros(
                             addLibro = { backStack.add(AddLibro) },
+                            editLibro = { backStack.add(EditLibro(it)) },
                             verDocentes = {
                                 backStack.clear()
                                 backStack.add(ListDocente)
@@ -268,6 +271,10 @@ fun Navegar() {
 
                     is AddLibro -> NavEntry(key) {
                         AdicionarLibro(onBack = { backStack.removeLastOrNull() })
+                    }
+
+                    is EditLibro -> NavEntry(key) {
+                        EditarLibro(onBack = { backStack.removeLastOrNull() }, isbn = key.isbn)
                     }
 
                     else -> NavEntry(Unit) { Text("Ruta desconocida") }

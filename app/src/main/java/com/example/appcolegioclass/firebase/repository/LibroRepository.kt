@@ -39,4 +39,14 @@ class LibroRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun buscarLibro(isbn: String): Result<Libro?> {
+        return try {
+            val doc = db.collection("libros").document(isbn).get().await()
+            val libro = doc.toObject(Libro::class.java)
+            Result.success(libro)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

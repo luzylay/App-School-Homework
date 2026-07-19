@@ -27,7 +27,7 @@ class LibroViewModel: ViewModel(){
                     _libros.value = it
                 }
                 .onFailure {
-                    _mensaje.value = it.message
+                    _mensaje.value = "Error al listar libros: ${it.localizedMessage ?: "Problema de conexión"}"
                 }
         }
     }
@@ -36,28 +36,48 @@ class LibroViewModel: ViewModel(){
         viewModelScope.launch {
             repo.eliminarLibro(isbn)
                 .onSuccess {
-                    _mensaje.value = "Libro Eliminado"
+                    _mensaje.value = "Libro eliminado"
                     findAll()
                 }
                 .onFailure {
-                    _mensaje.value = it.message
+                    _mensaje.value = "Error al eliminar el libro: ${it.localizedMessage ?: "Problema de conexión"}"
                 }
         }
     }
 
-    fun save(lib : Libro){
+    fun save(lib: Libro) {
         viewModelScope.launch {
             repo.registrarLibro(lib)
                 .onSuccess {
-                    _mensaje.value = "Libro Registrado"
+                    _mensaje.value = "Libro guardado"
                     findAll()
                 }
                 .onFailure {
-                    _mensaje.value = it.message
+                    _mensaje.value = "Error al guardar el libro: ${it.localizedMessage ?: "Problema de conexión"}"
                 }
         }
     }
-    fun limpiarMensaje(){
+
+    private val _libroSeleccionado = MutableStateFlow<Libro?>(null)
+    val libroSeleccionado: StateFlow<Libro?> = _libroSeleccionado
+
+    fun findById(isbn: String) {
+        viewModelScope.launch {
+            repo.buscarLibro(isbn)
+                .onSuccess {
+                    _libroSeleccionado.value = it
+                }
+                .onFailure {
+                    _mensaje.value = "Error al buscar el libro: ${it.localizedMessage ?: "Problema de conexión"}"
+                }
+        }
+    }
+
+    fun limpiarSeleccion() {
+        _libroSeleccionado.value = null
+    }
+
+    fun limpiarMensaje() {
         _mensaje.value = null
     }
 }

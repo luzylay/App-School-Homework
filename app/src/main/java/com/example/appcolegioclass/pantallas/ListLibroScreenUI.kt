@@ -1,5 +1,6 @@
 package com.example.appcolegioclass.pantallas
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun PantallaLibros(
     addLibro: () -> Unit,
+    editLibro: (String) -> Unit,
     verDocentes: () -> Unit,
     verCursos: () -> Unit,
     verAlumnos: () -> Unit,
@@ -178,7 +180,9 @@ fun PantallaLibros(
                         }
                     ) {
                         Card(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { editLibro(bean.isbn) }
                         ) {
                             Column(
                                 modifier = Modifier
